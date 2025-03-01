@@ -210,7 +210,36 @@ export class TechnicalAnalysis {
         const idx = this.context.idx;
         return [[this.context.precision(supertrend[idx]), direction[idx]]];
     }
-}
+
+    vwap(
+        source: number[],
+        anchor?: boolean[],
+        stdev_mult?: number
+    ): number | [number, number, number] {
+        const result = vwapFunction(source, this.context.data.volume, anchor, stdev_mult);
+        const idx = this.context.idx;
+        if (stdev_mult !== undefined && Array.isArray(result)) {
+        const [v, up, low] = result as [number[], number[], number[]];
+        return [
+            this.context.precision(v[idx]),
+            this.context.precision(up[idx]),
+            this.context.precision(low[idx])
+        ];
+        } else {
+        return this.context.precision((result as number[])[idx]);
+        }
+    }
+
+    swma(source: number[]): number {
+        const arr = swmaFunction(source);
+        const idx = this.context.idx;
+        return this.context.precision(arr[idx]);
+    }
+    }
+    
+
+
+
 
 //Here we did not use indicatorts implementation because it uses a different smoothing method which gives slightly different results that pine script
 function atr(high: number[], low: number[], close: number[], period: number): number[] {
@@ -714,5 +743,74 @@ function calculateSupertrend(high: number[], low: number[], close: number[], fac
 
     return [supertrend, direction];
 }
-
+function vwapFunction(
+    source: number[],
+    volume: number[],
+    anchor?: boolean[],
+    stdev_mult?: number
+  ): number[] | [number[], number[], number[]] {
+    const n = source.length;
+    const vwap = new Array(n).fill(NaN);
+  
+    // If no anchor provided, assume false for all indices.
+    if (!anchor) {
+      anchor = new Array(n).fill(false);
+    }
+  
+    // If stdev_mult is provided, prepare arrays for bands.
+    let upper: number[] = [];
+    let lower: number[] = [];
+    const calculateBands = stdev_mult !== undefined;
+    if (calculateBands) {
+      upper = new Array(n).fill(NaN);
+      lower = new Array(n).fill(NaN);
+    }
+  
+    let cumVolume = 0;
+    let cumVolPrice = 0;
+    // For standard deviation over the current segment.
+    let segValues: number[] = [];
+  
+    for (let i = 0; i < n; i++) {
+      // Reset cumulative sums if anchor is true.
+      if (anchor[i]) {
+        cumVolume = 0;
+        cumVolPrice = 0;
+        segValues = [];
+      }
+  
+      cumVolume += volume[i];
+      cumVolPrice += source[i] * volume[i];
+      vwap[i] = cumVolPrice / cumVolume;
+  
+      if (calculateBands) {
+        segValues.push(source[i]);
+        const segCount = segValues.length;
+        const segSum = segValues.reduce((sum, val) => sum + val, 0);
+        const segMean = segSum / segCount;
+        const segSumSq = segValues.reduce((sum, val) => sum + val * val, 0);
+        const variance = segSumSq / segCount - segMean * segMean;
+        const stddev = Math.sqrt(variance);
+        upper[i] = vwap[i] + stdev_mult * stddev;
+        lower[i] = vwap[i] - stdev_mult * stddev;
+      }
+    }
+  
+    if (calculateBands) {
+      return [vwap, upper, lower];
+    } else {
+      return vwap;
+    }
+  }
+  
+  // Global SWMA function (4-bar weighted average as in PineScript).
+function swmaFunction(source: number[]): number[] {
+    const n = source.length;
+    const result = new Array(n).fill(NaN);
+    for (let i = 3; i < n; i++) {
+      result[i] = (source[i - 3] * 1 + source[i - 2] * 2 + source[i - 1] * 2 + source[i] * 1) / 6;
+    }
+    return result;
+  }
+  
 export default TechnicalAnalysis;

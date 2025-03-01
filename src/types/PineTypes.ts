@@ -31,6 +31,8 @@ type PlotOptions = {
     format?: string;
     precision?: number;
     force_overlay?: boolean;
+    group?:string;
+
 };
 
 type IndicatorOptions = {
@@ -49,4 +51,31 @@ type IndicatorOptions = {
     max_polylines_count?: number;
     dynamic_requests?: boolean;
     behind_chart?: boolean;
+
 };
+ type PlotCandleOptions = {
+    color?: string | string[];   
+    // The wick color(s). Can be a 
+    wickcolor?: string | string[];
+    editable?: boolean;           
+    show_last?: number;           
+    // The border color(s) for the 
+    bordercolor?: string | string[]
+    display?: boolean;            
+    format?: string;              
+    precision?: number;           
+    force_overlay?: boolean;  
+    group?:string;
+  }
+
+   type PlotBarOptions = {
+    // The bar's color(s). Can be a
+    color?: string | string[];   
+    editable?: boolean;           
+    show_last?: number;           
+    display?: boolean;            
+    format?: string;              
+    precision?: number;           
+    force_overlay?: boolean;   
+    group?:string;
+  };

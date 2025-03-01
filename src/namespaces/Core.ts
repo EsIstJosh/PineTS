@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 export class Core {
+    private script: string 
+    private pane: number = 0
+    
     public color = {
         param: (source, index = 0) => {
             if (Array.isArray(source)) {
@@ -35,7 +38,7 @@ export class Core {
         blue: 'blue',
     };
     constructor(private context: any) {}
-    private extractPlotOptions(options: PlotCharOptions) {
+    private extractPlotOptions(options: PlotCharOptions | PlotCandleOptions | PlotBarOptions) {
         const _options: any = {};
         for (let key in options) {
             if (Array.isArray(options[key])) {
@@ -46,9 +49,11 @@ export class Core {
         }
         return _options;
     }
-    indicator(title: string, shorttitle?: string, options?: IndicatorOptions) {
-        //Just for compatibility, we don't need to do anything here
-    }
+    indicator(title?: string, shorttitle?: string, options?: IndicatorOptions) {
+        this.script = title?? shorttitle ?? "PineTS Script"
+        if (options) { 
+            this.pane = options.overlay?0:1
+            }}
 
     //in the current implementation, plot functions are only used to collect data for the plots array and map it to the market data
     plotchar(series: number[], title: string, options: PlotCharOptions) {
@@ -64,8 +69,11 @@ export class Core {
     }
 
     plot(series: any, title: string, options: PlotOptions) {
+        if (this.script) { 
+            options.group = this.script
+        }
         if (!this.context.plots[title]) {
-            this.context.plots[title] = { data: [], options: this.extractPlotOptions(options), title };
+            this.context.plots[title] = { data: [], options: this.extractPlotOptions(options), title, pane: this.pane };
         }
 
         this.context.plots[title].data.push({
@@ -83,4 +91,56 @@ export class Core {
         const rep = Array.isArray(series) ? replacement[0] : replacement;
         return isNaN(val) ? rep : val;
     }
+    plotcandle(open: number[], high: number[], low: number[], close: number[], title: string, options: any) {
+        if (this.script) {
+          options.group = this.script;
+        }
+        if (!this.context.candles[title]) {
+          this.context.candles[title] = {
+            data: [],
+            options: this.extractPlotOptions(options),
+            title,
+            pane: this.pane
+          };
+        }
+        const time = this.context.marketData[this.context.marketData.length - this.context.idx - 1].openTime;
+        const o = open[0], h = high[0], l = low[0], c = close[0];
+      
+        this.context.candles[title].data.push({
+          time,
+          open: o,
+          high: h,
+          low: l,
+          close: c,
+          pane: this.pane,
+          options: this.extractPlotOptions(options)
+        });
+      }
+      
+      plotbar(open: number[], high: number[], low: number[], close: number[], title: string, options: any) {
+        if (this.script) {
+          options.group = this.script;
+        }
+        if (!this.context.bars[title]) {
+          this.context.bars[title] = {
+            data: [],
+            options: this.extractPlotOptions(options),
+            title,
+            pane: this.pane
+          };
+        }
+        const time = this.context.marketData[this.context.marketData.length - this.context.idx - 1].openTime;
+        const o = open[0], h = high[0], l = low[0], c = close[0];
+      
+        this.context.bars[title].data.push({
+          time,
+          open: o,
+          high: h,
+          low: l,
+          close: c,
+          pane: this.pane,
+          options: this.extractPlotOptions(options)
+        });
+      }
+      
 }

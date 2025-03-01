@@ -42,6 +42,8 @@ export class Context {
 
     public result: any = undefined;
     public plots: any = {};
+    public candles: any = {};
+    public bars: any = {};
 
     public marketData: any;
     public source: IProvider | any[];
@@ -51,6 +53,7 @@ export class Context {
     public sDate: number;
     public eDate: number;
 
+    public group:string|undefined
     public pineTSCode: Function | String;
 
     constructor({
@@ -61,6 +64,7 @@ export class Context {
         limit,
         sDate,
         eDate,
+        title
     }: {
         marketData: any;
         source: IProvider | any[];
@@ -69,6 +73,7 @@ export class Context {
         limit?: number;
         sDate?: number;
         eDate?: number;
+        title?: string
     }) {
         this.marketData = marketData;
         this.source = source;
@@ -77,7 +82,7 @@ export class Context {
         this.limit = limit;
         this.sDate = sDate;
         this.eDate = eDate;
-
+        this.group = title
         this.math = new PineMath(this);
 
         this.ta = new TechnicalAnalysis(this);
@@ -87,12 +92,16 @@ export class Context {
         this.array = new PineArray(this);
         const core = new Core(this);
         this.core = {
-            plotchar: core.plotchar.bind(core),
-            na: core.na.bind(core),
             color: core.color,
-            plot: core.plot.bind(core),
+            indicator: core.indicator.bind(core),
+            na: core.na.bind(core),
             nz: core.nz.bind(core),
+            plot: core.plot.bind(core),
+            plotbar: core.plotbar.bind(core),
+            plotchar: core.plotchar.bind(core),
+            plotcandle: core.plotcandle.bind(core),
         };
+
     }
 
     //#region [Runtime functions] ===========================

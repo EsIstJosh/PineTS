@@ -10,7 +10,6 @@ import { IProvider } from '@pinets/marketData/IProvider';
  */
 export class PineTS {
     public data: any = [];
-
     //#region [Pine Script built-in variables]
     public open: any = [];
     public high: any = [];
@@ -43,10 +42,12 @@ export class PineTS {
         private timeframe?: string,
         private limit?: number,
         private sDate?: number,
-        private eDate?: number
+        private eDate?: number,
+        public title?: string
+
     ) {
         this._readyPromise = new Promise((resolve) => {
-            this.loadMarketData(source, tickerId, timeframe, limit, sDate, eDate).then((data) => {
+            this.loadMarketData(source, tickerId, timeframe, limit, sDate, eDate, title).then((data) => {
                 const marketData = data.reverse();
 
                 this._periods = marketData.length;
@@ -80,11 +81,11 @@ export class PineTS {
         });
     }
 
-    private async loadMarketData(source: IProvider | any[], tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number) {
+    private async loadMarketData(source: IProvider | any[], tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number, title?: string) {
         if (Array.isArray(source)) {
             return source;
         } else {
-            return (source as IProvider).getMarketData(tickerId, timeframe, limit, sDate, eDate);
+            return (source as IProvider).getMarketData(tickerId, timeframe, limit, sDate, eDate, title);
         }
     }
 
@@ -106,6 +107,7 @@ export class PineTS {
             limit: this.limit,
             sDate: this.sDate,
             eDate: this.eDate,
+            title: this.title,
         });
 
         context.pineTSCode = pineTSCode;
