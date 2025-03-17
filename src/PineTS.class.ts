@@ -30,7 +30,9 @@ export class PineTS {
     }
     //#endregion
 
-    //public fn: Function;
+
+    public pineTSCode:  Function | String
+    public fn: Function;
 
     private _readyPromise: Promise<any> = null;
 
@@ -95,10 +97,39 @@ export class PineTS {
         return this._readyPromise;
     }
 
-    public async run(pineTSCode: Function | String, n?: number, useTACache?: boolean): Promise<Context> {
+    public updateData(newData: any): void {
+        if (!newData) {
+            throw new Error("Invalid data: newData must be a valid object.");
+        }
+        
+        // Prepend the new record to the main data array.
+        this.data = [newData, ...this.data];
+        this._periods = this.data.length;
+        
+        // Update built-in arrays by prepending the corresponding values.
+        this.open = [newData.open, ...this.open];
+        this.close = [newData.close, ...this.close];
+        this.high = [newData.high, ...this.high];
+        this.low = [newData.low, ...this.low];
+        this.volume = [newData.volume, ...this.volume];
+        this.hl2 = [(newData.high + newData.low) / 2, ...this.hl2];
+        this.hlc3 = [(newData.high + newData.low + newData.close) / 3, ...this.hlc3];
+        this.ohlc4 = [(newData.high + newData.low + newData.open + newData.close) / 4, ...this.ohlc4];
+        this.openTime = [newData.openTime, ...this.openTime];
+        this.closeTime = [newData.closeTime, ...this.closeTime];
+    }
+
+
+    public async run(pineTSCode?: Function | String, n?: number, useTACache?: boolean): Promise<Context> {
         await this.ready();
         if (!n) n = this._periods;
-
+        if (!this.pineTSCode && !pineTSCode) {
+            throw new Error("Invalid PineTS Code: No pineTSCode supplied/stored.");
+          }
+          
+          // Use the new pineTSCode if provided, otherwise fall back to the cached version.
+          pineTSCode = pineTSCode || this.pineTSCode;
+          
         const context = new Context({
             marketData: this.data,
             source: this.source,
@@ -108,14 +139,19 @@ export class PineTS {
             sDate: this.sDate,
             eDate: this.eDate,
             title: this.title,
-        });
+        }); 
 
         context.pineTSCode = pineTSCode;
         context.useTACache = useTACache;
-        const transformer = transpile.bind(this);
-        let transpiledFn = transformer(pineTSCode);
 
-        //console.log('>>> transformedFn: ', transformedFn.toString());
+        // Check if the passed pineTSCode is the same as the cached one.
+        if (!this.fn || this.pineTSCode !== pineTSCode) {
+            const transformer = transpile.bind(this);
+            this.fn = transformer(pineTSCode);
+            this.pineTSCode = pineTSCode;
+        }
+        const transpiledFn = this.fn;
+
 
         const contextVarNames = ['const', 'var', 'let', 'params'];
         for (let i = this._periods - n, idx = n - 1; i < this._periods; i++, idx--) {

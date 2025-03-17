@@ -38,7 +38,7 @@ export class Core {
         blue: 'blue',
     };
     constructor(private context: any) {}
-    private extractPlotOptions(options: PlotCharOptions | PlotCandleOptions | PlotBarOptions) {
+    private extractPlotOptions(options: PlotCharOptions | PlotCandleOptions | PlotBarOptions | FillOptions  | PlotOptions | IndicatorOptions) {
         const _options: any = {};
         for (let key in options) {
             if (Array.isArray(options[key])) {
@@ -142,5 +142,13 @@ export class Core {
           options: this.extractPlotOptions(options)
         });
       }
-      
-}
+      fill(plot1: string, plot2: string, options?: FillOptions) { 
+        if (!this.context.fills[plot1]) {
+            this.context.fills[plot1] = {
+                plot1,
+                plot2,
+                options: this.extractPlotOptions(options),
+            };
+          }
+         
+    }}

@@ -1,234 +1,244 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 export class TechnicalAnalysis {
-    constructor(private context: any) {}
+  // Keeps track of the highest period/length encountered.
+  public max_period: number | null = null;
 
-    public get tr() {
-        const val = this.context.math.max(
-            this.context.data.high[0] - this.context.data.low[0],
-            this.context.math.abs(this.context.data.high[0] - this.context.data.close[1]),
-            this.context.math.abs(this.context.data.low[0] - this.context.data.close[1])
-        );
-        return val;
+  constructor(private context: any) {}
+
+  /**
+   * Updates max_period if the provided value is larger.
+   * @param value - A period or length value.
+   */
+  private updateMaxPeriod(value: number): void {
+    if (this.context.max_period === null || value > this.context.max_period) {
+      this.context.max_period = value;
     }
+  }
 
-    param(source, index, name?: string) {
-        if (!this.context.params[name]) this.context.params[name] = [];
-        if (Array.isArray(source)) {
-            if (index) {
-                this.context.params[name] = source.slice(index);
-                this.context.params[name].length = source.length; //ensure length is correct
-                return this.context.params[name];
-            }
-            this.context.params[name] = source.slice(0);
-            return this.context.params[name];
-        } else {
-            this.context.params[name][0] = source;
-            return this.context.params[name];
-        }
-        //return [source];
+  /**
+   * If the given value is an array, returns the maximum number within it;
+   * otherwise, returns the number itself.
+   * @param value - A number or an array of numbers.
+   */
+  private extractMaxValue(value: number | number[]): number {
+    return Array.isArray(value) ? Math.max(...value) : value;
+  }
+
+  public get tr() {
+    const val = this.context.math.max(
+      this.context.data.high[0] - this.context.data.low[0],
+      this.context.math.abs(this.context.data.high[0] - this.context.data.close[1]),
+      this.context.math.abs(this.context.data.low[0] - this.context.data.close[1])
+    );
+    return val;
+  }
+
+  param(source: any, index: any, name?: string) {
+    if (!this.context.params[name]) this.context.params[name] = [];
+    if (Array.isArray(source)) {
+      if (index) {
+        this.context.params[name] = source.slice(index);
+        this.context.params[name].length = source.length; //ensure length is correct
+        return this.context.params[name];
+      }
+      this.context.params[name] = source.slice(0);
+      return this.context.params[name];
+    } else {
+      this.context.params[name][0] = source;
+      return this.context.params[name];
     }
+  }
 
-    ema(source, _period) {
-        const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = ema(source.slice(0).reverse(), period);
+  ema(source: any, _period: number | number[]) {
+    const period = Array.isArray(_period) ? _period[0] : _period;
+    this.updateMaxPeriod(this.extractMaxValue(_period));
+    const result = ema(source.slice(0).reverse(), period);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
 
+  sma(source: any, _period: number | number[], _cacheId?: any) {
+    const period = Array.isArray(_period) ? _period[0] : _period;
+    this.updateMaxPeriod(this.extractMaxValue(_period));
+    const reversedSource = source.slice(0).reverse();
+    if (this.context.useTACache && _cacheId) {
+      if (!this.context.cache[_cacheId]) {
+        this.context.cache[_cacheId] = {};
+      }
+      const cacheObj = this.context.cache[_cacheId];
+      if (cacheObj) {
+        const result = sma_cache(reversedSource, period, cacheObj);
         const idx = this.context.idx;
         return this.context.precision(result[idx]);
+      }
     }
+    const result = sma(reversedSource, period);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
 
-    sma(source, _period, _cacheId?) {
-        const period = Array.isArray(_period) ? _period[0] : _period;
-        const reversedSource = source.slice(0).reverse();
+  vwma(source: any, _period: number | number[]) {
+    const period = Array.isArray(_period) ? _period[0] : _period;
+    this.updateMaxPeriod(this.extractMaxValue(_period));
+    const volume = this.context.data.volume;
+    const result = vwma(source.slice(0).reverse(), volume.slice(0).reverse(), period);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
 
-        if (this.context.useTACache && _cacheId) {
-            // Initialize cache if it doesn't exist
-            if (!this.context.cache[_cacheId]) {
-                this.context.cache[_cacheId] = {};
-            }
+  wma(source: any, _period: number | number[]) {
+    const period = Array.isArray(_period) ? _period[0] : _period;
+    this.updateMaxPeriod(this.extractMaxValue(_period));
+    const result = wma(source.slice(0).reverse(), period);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
 
-            const cacheObj = this.context.cache[_cacheId];
+  hma(source: any, _period: number | number[]) {
+    const period = Array.isArray(_period) ? _period[0] : _period;
+    this.updateMaxPeriod(this.extractMaxValue(_period));
+    const result = hma(source.slice(0).reverse(), period);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
 
-            // Check if we can use cache
-            if (cacheObj) {
-                const result = sma_cache(reversedSource, period, cacheObj);
-                const idx = this.context.idx;
-                return this.context.precision(result[idx]);
-            }
-        }
+  rma(source: any, _period: number | number[]) {
+    const period = Array.isArray(_period) ? _period[0] : _period;
+    this.updateMaxPeriod(this.extractMaxValue(_period));
+    const result = rma(source.slice(0).reverse(), period);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
 
-        // Calculate from scratch if no cache or cache conditions not met
-        const result = sma(reversedSource, period);
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
+  change(source: any, _length: number | number[] = 1) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const result = change(source.slice(0).reverse(), length);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  rsi(source: any, _period: number | number[]) {
+    const period = Array.isArray(_period) ? _period[0] : _period;
+    this.updateMaxPeriod(this.extractMaxValue(_period));
+    const result = rsi(source.slice(0).reverse(), period);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  atr(_period: number | number[]) {
+    const period = Array.isArray(_period) ? _period[0] : _period;
+    this.updateMaxPeriod(this.extractMaxValue(_period));
+    const high = this.context.data.high.slice().reverse();
+    const low = this.context.data.low.slice().reverse();
+    const close = this.context.data.close.slice().reverse();
+    const result = atr(high, low, close, period);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  mom(source: any, _length: number | number[]) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const result = mom(source.slice(0).reverse(), length);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  roc(source: any, _length: number | number[]) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const result = roc(source.slice(0).reverse(), length);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  dev(source: any, _length: number | number[]) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const result = dev(source.slice(0).reverse(), length);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  variance(source: any, _length: number | number[]) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const result = variance(source.slice(0).reverse(), length);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  highest(source: any, _length: number | number[]) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const result = highest(source.slice(0).reverse(), length);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  lowest(source: any, _length: number | number[]) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const result = lowest(source.slice(0).reverse(), length);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  median(source: any, _length: number | number[]) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const result = median(source.slice(0).reverse(), length);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  stdev(source: any, _length: number | number[], _bias: boolean | boolean[] = true) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const bias = Array.isArray(_bias) ? _bias[0] : _bias;
+    const result = stdev(source.slice(0).reverse(), length, bias);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  linreg(source: any, _length: number | number[], _offset: number | number[]) {
+    const length = Array.isArray(_length) ? _length[0] : _length;
+    this.updateMaxPeriod(this.extractMaxValue(_length));
+    const offset = Array.isArray(_offset) ? _offset[0] : _offset;
+    const result = linreg(source.slice(0).reverse(), length, offset);
+    const idx = this.context.idx;
+    return this.context.precision(result[idx]);
+  }
+
+  supertrend(_factor, _atrPeriod) {
+    const factor = Array.isArray(_factor) ? _factor[0] : _factor;
+    const atrPeriod = Array.isArray(_atrPeriod) ? _atrPeriod[0] : _atrPeriod;
+    this.updateMaxPeriod(this.extractMaxValue(atrPeriod));
+
+    const high = this.context.data.high.slice().reverse();
+    const low = this.context.data.low.slice().reverse();
+    const close = this.context.data.close.slice().reverse();
+    const [supertrend, direction] = calculateSupertrend(high, low, close, factor, atrPeriod);
+
+    const idx = this.context.idx;
+    return [[this.context.precision(supertrend[idx]), direction[idx]]];
+}
+
+  vwap(source: number[], anchor?: boolean[], stdev_mult?: number): number | [number, number, number] {
+    const result = vwapFunction(source, this.context.data.volume, anchor, stdev_mult);
+    const idx = this.context.idx;
+    if (stdev_mult !== undefined && Array.isArray(result)) {
+      const [v, up, low] = result as [number[], number[], number[]];
+      return [
+        this.context.precision(v[idx]),
+        this.context.precision(up[idx]),
+        this.context.precision(low[idx])
+      ];
+    } else {
+      return this.context.precision((result as number[])[idx]);
     }
-
-    vwma(source, _period) {
-        const period = Array.isArray(_period) ? _period[0] : _period;
-        const volume = this.context.data.volume;
-
-        const result = vwma(source.slice(0).reverse(), volume.slice(0).reverse(), period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    wma(source, _period) {
-        const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = wma(source.slice(0).reverse(), period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    hma(source, _period) {
-        const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = hma(source.slice(0).reverse(), period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    rma(source, _period) {
-        const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = rma(source.slice(0).reverse(), period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    change(source, _length = 1) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = change(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    rsi(source, _period) {
-        const period = Array.isArray(_period) ? _period[0] : _period;
-        const result = rsi(source.slice(0).reverse(), period);
-        //result.reverse();
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    atr(_period) {
-        const period = Array.isArray(_period) ? _period[0] : _period;
-        const high = this.context.data.high.slice().reverse();
-        const low = this.context.data.low.slice().reverse();
-        const close = this.context.data.close.slice().reverse();
-        const result = atr(high, low, close, period);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    mom(source, _length) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = mom(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    roc(source, _length) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = roc(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    dev(source, _length) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = dev(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    variance(source, _length) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = variance(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    highest(source, _length) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = highest(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    lowest(source, _length) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = lowest(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    median(source, _length) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const result = median(source.slice(0).reverse(), length);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    stdev(source, _length, _bias = true) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const bias = Array.isArray(_bias) ? _bias[0] : _bias;
-        const result = stdev(source.slice(0).reverse(), length, bias);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    linreg(source, _length, _offset) {
-        const length = Array.isArray(_length) ? _length[0] : _length;
-        const offset = Array.isArray(_offset) ? _offset[0] : _offset;
-        const result = linreg(source.slice(0).reverse(), length, offset);
-        //return result.reverse();
-        const idx = this.context.idx;
-        return this.context.precision(result[idx]);
-    }
-
-    supertrend(_factor, _atrPeriod) {
-        const factor = Array.isArray(_factor) ? _factor[0] : _factor;
-        const atrPeriod = Array.isArray(_atrPeriod) ? _atrPeriod[0] : _atrPeriod;
-
-        const high = this.context.data.high.slice().reverse();
-        const low = this.context.data.low.slice().reverse();
-        const close = this.context.data.close.slice().reverse();
-        const [supertrend, direction] = calculateSupertrend(high, low, close, factor, atrPeriod);
-
-        const idx = this.context.idx;
-        return [[this.context.precision(supertrend[idx]), direction[idx]]];
-    }
-
-    vwap(
-        source: number[],
-        anchor?: boolean[],
-        stdev_mult?: number
-    ): number | [number, number, number] {
-        const result = vwapFunction(source, this.context.data.volume, anchor, stdev_mult);
-        const idx = this.context.idx;
-        if (stdev_mult !== undefined && Array.isArray(result)) {
-        const [v, up, low] = result as [number[], number[], number[]];
-        return [
-            this.context.precision(v[idx]),
-            this.context.precision(up[idx]),
-            this.context.precision(low[idx])
-        ];
-        } else {
-        return this.context.precision((result as number[])[idx]);
-        }
-    }
+  }
 
     swma(source: number[]): number {
         const arr = swmaFunction(source);

@@ -44,7 +44,7 @@ export class Context {
     public plots: any = {};
     public candles: any = {};
     public bars: any = {};
-
+    public fills: any = {};
     public marketData: any;
     public source: IProvider | any[];
     public tickerId: string;
@@ -55,7 +55,7 @@ export class Context {
 
     public group:string|undefined
     public pineTSCode: Function | String;
-
+    public max_period?: number 
     constructor({
         marketData,
         source,
@@ -100,8 +100,9 @@ export class Context {
             plotbar: core.plotbar.bind(core),
             plotchar: core.plotchar.bind(core),
             plotcandle: core.plotcandle.bind(core),
+            fill: core.fill.bind(core),
         };
-
+        
     }
 
     //#region [Runtime functions] ===========================

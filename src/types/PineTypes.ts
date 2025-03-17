@@ -79,3 +79,13 @@ type IndicatorOptions = {
     force_overlay?: boolean;   
     group?:string;
   };
+
+
+   type FillOptions = {
+    color?: string;
+    title?: string;
+    editable?: boolean;
+    show_last?: boolean;
+    fillgaps?: boolean;
+    display?: boolean;
+    }
