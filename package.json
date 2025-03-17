@@ -18,9 +18,11 @@
         "build:prod:cjs": "cross-env BUILD=prod FORMAT=cjs rollup -c ./rollup.config.js",
         "build:prod:browser": "cross-env BUILD=prod FORMAT=browser rollup -c ./rollup.config.js",
         "build:prod:es": "cross-env BUILD=prod rollup -c ./rollup.config.js",
-        "knip": "knip"
+        "knip": "knip",
+        "prepare": "npm run-script build:dev:all"
+
     },
-    "author": "Alaa-eddine KADDOURI",
+    "author": "EsIstJosh",
     "license": "AGPL-3.0",
     "dependencies": {
         "acorn": "^8.14.0",
@@ -43,6 +45,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/alaa-eddine/PineTS.git"
+        "url": "git+https://github.com/EsIstJosh/PineTS.git"
     }
+
 }
