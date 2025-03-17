@@ -19,7 +19,7 @@
         "build:prod:browser": "cross-env BUILD=prod FORMAT=browser rollup -c ./rollup.config.js",
         "build:prod:es": "cross-env BUILD=prod rollup -c ./rollup.config.js",
         "knip": "knip",
-        "prepare": "npm run-script build:dev:all"
+        "prepare": "npm run-script build:prod:all"
 
     },
     "author": "EsIstJosh",
