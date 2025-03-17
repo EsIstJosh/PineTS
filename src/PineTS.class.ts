@@ -33,7 +33,6 @@ export class PineTS {
 
     public pineTSCode:  Function | String
     public fn: Function;
-    public max_period: number
     private _readyPromise: Promise<any> = null;
 
     private _ready = false;
@@ -204,7 +203,6 @@ export class PineTS {
                 }
             }
         }
-        this.max_period = context.max_period?? null
         return context;
     }
 }

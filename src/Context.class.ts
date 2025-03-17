@@ -55,7 +55,6 @@ export class Context {
 
     public group:string|undefined
     public pineTSCode: Function | String;
-    public max_period?: number 
     constructor({
         marketData,
         source,
