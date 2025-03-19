@@ -152,7 +152,7 @@ export class Core {
           }
          
     }
-      hline(price: number, title: string, options: HLineOptions) {
+      hline(price: number, title: string, options?: HLineOptions) {
         // Extract the plot options.
         const extractedOptions = this.extractPlotOptions(options);
 
