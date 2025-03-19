@@ -161,8 +161,7 @@ export class Core {
         this.context.hlines[title].options = extractedOptions;
         } else {
         this.context.hlines[title] = {
-            price,
-            title,
+            price: price,
             options: extractedOptions,
             pane: this.pane,
         };
