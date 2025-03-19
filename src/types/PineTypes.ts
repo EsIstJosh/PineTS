@@ -31,8 +31,7 @@ type PlotOptions = {
     format?: string;
     precision?: number;
     force_overlay?: boolean;
-    group?:string;
-
+    group?: string;
 };
 
 type IndicatorOptions = {
@@ -51,41 +50,45 @@ type IndicatorOptions = {
     max_polylines_count?: number;
     dynamic_requests?: boolean;
     behind_chart?: boolean;
-
 };
- type PlotCandleOptions = {
-    color?: string | string[];   
-    // The wick color(s). Can be a 
+type PlotCandleOptions = {
+    color?: string | string[];
     wickcolor?: string | string[];
-    editable?: boolean;           
-    show_last?: number;           
-    // The border color(s) for the 
-    bordercolor?: string | string[]
-    display?: boolean;            
-    format?: string;              
-    precision?: number;           
-    force_overlay?: boolean;  
-    group?:string;
-  }
+    editable?: boolean;
+    show_last?: number;
+    // The border color(s) for the
+    bordercolor?: string | string[];
+    display?: boolean;
+    format?: string;
+    precision?: number;
+    force_overlay?: boolean;
+    group?: string;
+};
 
-   type PlotBarOptions = {
-    // The bar's color(s). Can be a
-    color?: string | string[];   
-    editable?: boolean;           
-    show_last?: number;           
-    display?: boolean;            
-    format?: string;              
-    precision?: number;           
-    force_overlay?: boolean;   
-    group?:string;
-  };
+type PlotBarOptions = {
+    color?: string | string[];
+    editable?: boolean;
+    show_last?: number;
+    display?: boolean;
+    format?: string;
+    precision?: number;
+    force_overlay?: boolean;
+    group?: string;
+};
 
-
-   type FillOptions = {
+type FillOptions = {
     color?: string;
     title?: string;
     editable?: boolean;
     show_last?: boolean;
     fillgaps?: boolean;
     display?: boolean;
-    }
+};
+
+type HLineOptions = {
+    color?: string;
+    linestyle?: string;
+    linewidth?: number;
+    editable?: boolean;
+    display?: boolean;
+};

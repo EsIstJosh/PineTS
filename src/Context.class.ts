@@ -45,6 +45,7 @@ export class Context {
     public candles: any = {};
     public bars: any = {};
     public fills: any = {};
+    public hlines: any = {};
     public marketData: any;
     public source: IProvider | any[];
     public tickerId: string;
@@ -100,6 +101,7 @@ export class Context {
             plotchar: core.plotchar.bind(core),
             plotcandle: core.plotcandle.bind(core),
             fill: core.fill.bind(core),
+            hline: core.hline.bind(core) 
         };
         
     }

@@ -142,7 +142,7 @@ export class Core {
           options: this.extractPlotOptions(options)
         });
       }
-      fill(plot1: string, plot2: string, options?: FillOptions) { 
+      fill(plot1: string | number , plot2: string | number , options?: FillOptions) { 
         if (!this.context.fills[plot1]) {
             this.context.fills[plot1] = {
                 plot1,
@@ -151,4 +151,16 @@ export class Core {
             };
           }
          
-    }}
+    }
+      hline(price: number, title: string, options: HLineOptions) {
+        this.context.hlines.push({
+            price,
+            title,
+            options: this.extractPlotOptions(options),
+            pane: this.pane 
+        })
+
+      }
+
+
+}

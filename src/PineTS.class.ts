@@ -144,7 +144,7 @@ export class PineTS {
         context.useTACache = useTACache;
 
         // Check if the passed pineTSCode is the same as the cached one.
-        if (!this.fn || this.pineTSCode !== pineTSCode) {
+        if (!this.fn || pineTSCode && this.pineTSCode !== pineTSCode) {
             const transformer = transpile.bind(this);
             this.fn = transformer(pineTSCode);
             this.pineTSCode = pineTSCode;
