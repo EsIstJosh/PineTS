@@ -155,13 +155,13 @@ export class Core {
       hline(price: number, title: string, options?: HLineOptions) {
         // Extract the plot options.
         const extractedOptions = this.extractPlotOptions(options);
-
+        const value = Array.isArray(price) ? price[0] : price;
         if (this.context.hlines[title]) {
-        this.context.hlines[title].price = price;
+        this.context.hlines[title].price = value;
         this.context.hlines[title].options = extractedOptions;
         } else {
         this.context.hlines[title] = {
-            price: price,
+            price: value,
             options: extractedOptions,
             pane: this.pane,
         };
