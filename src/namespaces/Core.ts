@@ -153,14 +153,19 @@ export class Core {
          
     }
       hline(price: number, title: string, options: HLineOptions) {
-        this.context.hlines.push({
+        // Extract the plot options.
+        const extractedOptions = this.extractPlotOptions(options);
+
+        if (this.context.hlines[title]) {
+        this.context.hlines[title].price = price;
+        this.context.hlines[title].options = extractedOptions;
+        } else {
+        this.context.hlines[title] = {
             price,
             title,
-            options: this.extractPlotOptions(options),
-            pane: this.pane 
-        })
-
-      }
-
-
+            options: extractedOptions,
+            pane: this.pane,
+        };
+        }
+        }
 }
