@@ -1,6 +1,10 @@
-### ⬅️ [API Coverage Index](../api-coverage.md)
-
 ---
+layout: default
+title: Chart
+parent: API Coverage
+---
+
+## Chart
 
 ## Chart Point Functions
 

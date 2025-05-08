@@ -1,5 +1,7 @@
-### ⬅️ [API Coverage Index](../api-coverage.md)
-
+---
+layout: default
+title: Log
+parent: API Coverage
 ---
 
 ## Log

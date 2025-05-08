@@ -1,5 +1,7 @@
-### ⬅️ [API Coverage Index](../api-coverage.md)
-
+---
+layout: default
+title: Syminfo
+parent: API Coverage
 ---
 
 ## Syminfo
