@@ -1,5 +1,7 @@
-### ⬅️ [API Coverage Index](../api-coverage.md)
-
+---
+layout: default
+title: Technical Analysis
+parent: API Coverage
 ---
 
 ## Technical Analysis
@@ -23,7 +25,10 @@
 | `ta.lowest()`     | ✅     |
 | `ta.median()`     | ✅     |
 | `ta.stdev()`      | ✅     |
-| `ta.dema()`       | ✔️     |
+| `ta.crossover()`  | ✔️     |
+| `ta.crossunder()` | ✔️     |
+| `ta.pivothigh()`  | ✔️     |
+| `ta.pivotlow()`   | ✔️     |
 | `ta.tema()`       | ✔️     |
 | `ta.linreg()`     | ✔️     |
 | `ta.tr()`         | ✔️     |

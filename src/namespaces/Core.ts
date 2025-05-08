@@ -166,5 +166,5 @@ export class Core {
             pane: this.pane,
         };
         }
-        }
+    }
 }
