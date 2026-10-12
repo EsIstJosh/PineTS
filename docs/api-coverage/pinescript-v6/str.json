@@ -9,7 +9,7 @@
     },
     "Formatting": {
         "str.format()": true,
-        "str.format_time()": false
+        "str.format_time()": true
     },
     "Transformation": {
         "str.lower()": true,
