@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { assertElementCount } from '../limits';
+
 let _tableIdCounter = 0;
 
 export function resetTableIdCounter() {
@@ -79,6 +81,12 @@ export class TableObject {
         this.force_overlay = force_overlay;
         this._deleted = false;
         this.merges = [];
+
+        // Guard against an unbounded cell allocation from a single table.new.
+        assertElementCount(
+            (this.rows > 0 ? this.rows : 0) * (this.columns > 0 ? this.columns : 0),
+            'table.new'
+        );
 
         // Initialize cells grid (rows × columns) with nulls
         this.cells = [];

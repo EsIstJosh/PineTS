@@ -6,6 +6,7 @@ import { PineArrayObject, PineArrayType } from './array/PineArrayObject';
 import { joinElements } from './array/format';
 import { getDatePartsInTimezone } from './Time';
 import { formatFloat, formatNumberPattern, formatVolume } from './numberFormat';
+import { assertElementCount } from './limits';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -80,6 +81,8 @@ export class Str {
         return text(value).trim();
     }
     repeat(source: string, repeat: number, separator: string = '') {
+        const n = typeof repeat === 'number' && repeat > 0 ? Math.floor(repeat) : 0;
+        assertElementCount(n * (text(source).length + text(separator).length), 'str.repeat');
         return Array(repeat)
             .fill(text(source))
             .join(text(separator));

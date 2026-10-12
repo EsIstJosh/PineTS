@@ -279,7 +279,7 @@ export class FMPProvider extends BaseProvider<FMPProviderConfig> {
         eDate?: number,
         limit?: number,
     ): Promise<Kline[]> {
-        let url = `${this._baseUrl}/stable/historical-price-eod/full?symbol=${tickerId}&apikey=${this._apiKey}`;
+        let url = `${this._baseUrl}/stable/historical-price-eod/full?symbol=${encodeURIComponent(tickerId)}&apikey=${this._apiKey}`;
 
         if (sDate) url += `&from=${this._msToDateStr(sDate)}`;
         if (eDate) url += `&to=${this._msToDateStr(eDate)}`;
@@ -341,7 +341,7 @@ export class FMPProvider extends BaseProvider<FMPProviderConfig> {
         eDate?: number,
         limit?: number,
     ): Promise<Kline[]> {
-        let url = `${this._baseUrl}${endpoint}?symbol=${tickerId}&apikey=${this._apiKey}`;
+        let url = `${this._baseUrl}${endpoint}?symbol=${encodeURIComponent(tickerId)}&apikey=${this._apiKey}`;
 
         if (sDate) url += `&from=${this._msToDateStr(sDate)}`;
         if (eDate) url += `&to=${this._msToDateStr(eDate)}`;
@@ -548,7 +548,7 @@ export class FMPProvider extends BaseProvider<FMPProviderConfig> {
             return this._profileCache.get(tickerId)!;
         }
 
-        const url = `${this._baseUrl}/stable/profile?symbol=${tickerId}&apikey=${this._apiKey}`;
+        const url = `${this._baseUrl}/stable/profile?symbol=${encodeURIComponent(tickerId)}&apikey=${this._apiKey}`;
         const response = await fetch(url);
         if (!response.ok) return null;
 

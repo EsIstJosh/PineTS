@@ -7,6 +7,7 @@ import { formatTimeframe, parseTimeframe, timeframeSeconds } from '../../../time
 import { findSecContextIdx } from '../utils/findSecContextIdx';
 import { findLTFContextIdx } from '../utils/findLTFContextIdx';
 import { parseArgsForPineParams } from '../../utils';
+import { trackRequestContext, MAX_CALC_BARS } from '../../limits';
 
 // Pine signature (v5/v6):
 //   request.security(symbol, timeframe, expression, gaps, lookahead, ignore_invalid_symbol, currency, calc_bars_count)
@@ -163,7 +164,7 @@ export function security(context: any) {
         // (e.g. 15m chart, daily security where 500 chart bars cover only ~5 daily bars).
         const _calc_bars_count = (() => {
             const v = resolveSlotValue(parsed.calc_bars_count);
-            return typeof v === 'number' && v > 0 ? v : undefined;
+            return typeof v === 'number' && v > 0 ? Math.min(v, MAX_CALC_BARS) : undefined;
         })();
 
         // CRITICAL: Prevent infinite recursion in secondary contexts
@@ -314,6 +315,11 @@ export function security(context: any) {
             ? context.marketData[context.marketData.length - 1].closeTime
             : 0;
         const secEDate = lastBarCloseTime || context.eDate || Date.now();
+
+        // Count this new secondary context against the per-run request budget
+        // (one provider fetch on the host's API key); stops an uncapped fan-out,
+        // e.g. a per-bar-varying symbol, from draining the host's provider quota.
+        trackRequestContext(context, 'request.security');
 
         // Pass calc_bars_count as `periods` so the secondary fetches that many bars
         // ending at secEDate — gives the script the historical depth it asked for.

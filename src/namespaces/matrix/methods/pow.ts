@@ -22,7 +22,11 @@ export function pow(context: Context) {
         for (let i = 0; i < rows; i++) base.matrix[i] = [...id.matrix[i]];
 
         let p = Math.floor(power);
-        if (p < 0) return new PineMatrixObject(rows, cols, NaN, context); // Or inverse? Pine usually doesn't do matrix power inversion automatically here
+        // A non-finite power (e.g. Infinity from math.pow(10, 400)) is a fixed
+        // point of `p = Math.floor(p / 2)`, so the loop below would never
+        // terminate (a pure CPU spin). Reject it, like a negative power, with a
+        // na matrix instead of hanging the host thread.
+        if (!Number.isFinite(p) || p < 0) return new PineMatrixObject(rows, cols, NaN, context); // Or inverse? Pine usually doesn't do matrix power inversion automatically here
 
         while (p > 0) {
             if (p % 2 === 1) {
