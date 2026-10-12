@@ -5,6 +5,7 @@ import { Context } from '..';
 import { PineArrayObject, PineArrayType } from './array/PineArrayObject';
 import { joinElements } from './array/format';
 import { formatFloat, formatNumberPattern, formatVolume } from './numberFormat';
+import { assertElementCount } from './limits';
 import { DEFAULT_TIME_FORMAT, formatTime, resolveTimeZone } from './formatTime';
 
 const FORMAT_TIME_PARAMS = ['time', 'format', 'timezone'];
@@ -88,6 +89,8 @@ export class Str {
         return text(value).trim();
     }
     repeat(source: string, repeat: number, separator: string = '') {
+        const n = typeof repeat === 'number' && repeat > 0 ? Math.floor(repeat) : 0;
+        assertElementCount(n * (text(source).length + text(separator).length), 'str.repeat');
         return Array(repeat)
             .fill(text(source))
             .join(text(separator));

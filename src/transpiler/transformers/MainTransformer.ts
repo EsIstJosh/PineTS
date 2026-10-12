@@ -480,7 +480,11 @@ export function runTransformationPass(
             }
 
             // Prepend guard check as the first statement in the loop body
-            if (node.body && node.body.type === 'BlockStatement') {
+            // (wrapping a braceless body first — PineTS-syntax only).
+            if (node.body) {
+                if (node.body.type !== 'BlockStatement') {
+                    node.body = { type: 'BlockStatement', body: [node.body] };
+                }
                 node.body.body.unshift(forOfGuard.guardCheck);
             }
 
@@ -512,9 +516,33 @@ export function runTransformationPass(
             } else if (node.right) {
                 c(node.right, state);
             }
+            // Inject loop guard (for-in is reachable only via PineTS-syntax input;
+            // native Pine `for…in` is emitted as a for-of). Without it an
+            // unbounded for-in could ignore setMaxLoops and hang the runtime.
+            const forInGuard = createLoopGuardNodes(state.getNextLoopGuardName());
+            state.addHoistedStatement(forInGuard.counterDecl);
             // Traverse the body
             if (node.body) {
                 c(node.body, state);
+                if (node.body.type !== 'BlockStatement') {
+                    node.body = { type: 'BlockStatement', body: [node.body] };
+                }
+                node.body.body.unshift(forInGuard.guardCheck);
+            }
+        },
+        DoWhileStatement(node: any, state: ScopeManager, c: any) {
+            // do…while is reachable only via PineTS-syntax input (native Pine has
+            // no do…while). Guard it so an unbounded do…while honors setMaxLoops
+            // instead of hanging the runtime.
+            const doGuard = createLoopGuardNodes(state.getNextLoopGuardName());
+            state.addHoistedStatement(doGuard.counterDecl);
+            if (node.test) c(node.test, state);
+            if (node.body) {
+                c(node.body, state);
+                if (node.body.type !== 'BlockStatement') {
+                    node.body = { type: 'BlockStatement', body: [node.body] };
+                }
+                node.body.body.unshift(doGuard.guardCheck);
             }
         },
         MemberExpression(node: any, state: ScopeManager, c: any) {

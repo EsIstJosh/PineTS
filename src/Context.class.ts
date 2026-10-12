@@ -35,6 +35,8 @@ import { VolumeRowHelper } from './namespaces/footprint/VolumeRowHelper';
 import { Ticker } from './namespaces/Ticker';
 import { isScalarHelper } from './namespaces/utils';
 import { receiverMatchesMethod } from './namespaces/methodDispatch';
+import { BUILTIN_METHOD_NAMES } from './transpiler/settings';
+import { PineRuntimeError } from './errors/PineRuntimeError';
 import type { IndicatorOptions } from './types/PineTypes';
 import { PineArrayObject, PineArrayType } from './namespaces/array/PineArrayObject';
 
@@ -982,6 +984,16 @@ export class Context {
      * drawing itself, or for an na drawing a stand-in whose getters return na (`get_text` the
      * na string) and whose setters do nothing, as on TradingView.
      */
+    /**
+     * Halt the script with a loop-limit runtime error. The transpiler's loop
+     * guard calls this (`$.loopError(...)`) instead of `throw new Error(...)` so
+     * the fault is a `PineRuntimeError` — a host can tell a script-level loop-limit
+     * kill from a general engine error by `instanceof`, as the docs promise.
+     */
+    public loopError(message: string): never {
+        throw new PineRuntimeError(message);
+    }
+
     public drawingOrNa(receiver: any) {
         const isNa = receiver === null || receiver === undefined || (typeof receiver === 'number' && isNaN(receiver));
         return isNa ? NA_DRAWING : receiver;
@@ -1023,6 +1035,13 @@ export class Context {
             if (receiverMatchesMethod(fn, factory, recv)) return this.call(fn, id, receiver, ...args);
         }
 
+        // Fall back to a built-in object method, but only one Pine actually
+        // exposes. `name` is the method name from the script; looking it up
+        // directly on the receiver would also reach native JavaScript members
+        // (`"abc".length`, `arr.constructor`, `fn.apply`), which TradingView has
+        // no notion of — a parity break and a route off the Pine object graph.
+        // Restrict the lookup to the Pine built-in method vocabulary.
+        if (!BUILTIN_METHOD_NAMES.has(name)) return undefined;
         const member = recv[name];
         return typeof member === 'function' ? member.apply(recv, args.map(unwrap)) : undefined;
     }
