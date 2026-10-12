@@ -4,15 +4,24 @@ import { Series } from '../Series';
 import { Context } from '..';
 import { PineArrayObject, PineArrayType } from './array/PineArrayObject';
 import { joinElements } from './array/format';
-import { getDatePartsInTimezone } from './Time';
 import { formatFloat, formatNumberPattern, formatVolume } from './numberFormat';
+import { assertElementCount } from './limits';
+import { DEFAULT_TIME_FORMAT, formatTime, resolveTimeZone } from './formatTime';
 
-const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MONTH_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const DAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const FORMAT_TIME_PARAMS = ['time', 'format', 'timezone'];
 
-const pad = (n: number, len: number) => String(n).padStart(len, '0');
+const isNamedArgs = (a: any) => a !== null && typeof a === 'object' && Object.getPrototypeOf(a) === Object.prototype;
+
+/** Positional arguments by parameter name, merged with the trailing named-arguments object; series are read at the current bar. */
+function argsByName(args: any[], names: string[]): Record<string, any> {
+    const out: Record<string, any> = {};
+    args.forEach((a, i) => {
+        if (isNamedArgs(a)) Object.assign(out, a);
+        else if (i < names.length) out[names[i]] = a;
+    });
+    for (const k in out) if (out[k] instanceof Series) out[k] = out[k].get(0);
+    return out;
+}
 
 // Named number formats of str.format placeholders ({0,number,integer}, …), as DecimalFormat patterns.
 const MESSAGE_NUMBER_FORMATS: Record<string, string> = { '': '#,##0.###', integer: '#,##0', percent: '#,##0%', currency: '$#,##0.00' };
@@ -80,6 +89,8 @@ export class Str {
         return text(value).trim();
     }
     repeat(source: string, repeat: number, separator: string = '') {
+        const n = typeof repeat === 'number' && repeat > 0 ? Math.floor(repeat) : 0;
+        assertElementCount(n * (text(source).length + text(separator).length), 'str.repeat');
         return Array(repeat)
             .fill(text(source))
             .join(text(separator));
@@ -141,104 +152,17 @@ export class Str {
     }
 
     /**
-     * Format a UNIX millisecond timestamp using Java SimpleDateFormat-style tokens
-     * (yyyy, MM, dd, HH, mm, ss, EEE, EEEE, MMM, MMMM, a, h, S, Z, etc.).
-     * Text inside single quotes is treated as a literal; '' produces a literal '.
+     * Format a UNIX millisecond time with a java.text.SimpleDateFormat pattern in a time zone
+     * (see formatTime.ts). `time`, `format` and `timezone` can be passed by name.
      */
-    format_time(time: any, format: string = "yyyy-MM-dd'T'HH:mm:ssZ", timezone?: string) {
-        // TradingView formats an na time as the epoch (1970-01-01).
+    format_time(...args: any[]) {
+        const { time, format, timezone } = argsByName(args, FORMAT_TIME_PARAMS);
+        // TradingView formats an na time as the epoch and an na format as the empty pattern.
         const ts = isNa(time) ? 0 : Number(time);
-        const tz = timezone || this.context.pine?.syminfo?.timezone || 'UTC';
-        const parts = getDatePartsInTimezone(ts, tz);
-
-        // Compute timezone offset (for Z token) by comparing tz-local recomposed UTC ms to actual ts
-        const tzAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
-        const offsetMin = Math.round((tzAsUtc - ts) / 60000);
-
-        // Day of year (in target tz)
-        const startOfYearUtc = Date.UTC(parts.year, 0, 1);
-        const dayOfYear = Math.floor((tzAsUtc - startOfYearUtc) / 86400000) + 1;
-
-        const hour12 = parts.hour % 12 === 0 ? 12 : parts.hour % 12;
-
-        let result = '';
-        let i = 0;
-        while (i < format.length) {
-            const ch = format[i];
-
-            // Single-quoted literal
-            if (ch === "'") {
-                if (format[i + 1] === "'") { result += "'"; i += 2; continue; }
-                const end = format.indexOf("'", i + 1);
-                if (end === -1) { result += format.substring(i + 1); break; }
-                result += format.substring(i + 1, end);
-                i = end + 1;
-                continue;
-            }
-
-            // Pattern token: count consecutive same-letter chars
-            if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
-                let count = 1;
-                while (format[i + count] === ch) count++;
-                i += count;
-
-                switch (ch) {
-                    case 'y':
-                        result += count === 2 ? pad(parts.year % 100, 2) : count >= 4 ? pad(parts.year, 4) : String(parts.year);
-                        break;
-                    case 'M':
-                        if (count >= 4) result += MONTH_LONG[parts.month - 1];
-                        else if (count === 3) result += MONTH_SHORT[parts.month - 1];
-                        else if (count === 2) result += pad(parts.month, 2);
-                        else result += String(parts.month);
-                        break;
-                    case 'd':
-                        result += count === 2 ? pad(parts.day, 2) : String(parts.day);
-                        break;
-                    case 'D':
-                        result += count >= 3 ? pad(dayOfYear, 3) : count === 2 ? pad(dayOfYear, 2) : String(dayOfYear);
-                        break;
-                    case 'E':
-                        result += count >= 4 ? DAY_LONG[parts.dayOfWeek] : DAY_SHORT[parts.dayOfWeek];
-                        break;
-                    case 'a':
-                        result += parts.hour < 12 ? 'AM' : 'PM';
-                        break;
-                    case 'h':
-                        result += count === 2 ? pad(hour12, 2) : String(hour12);
-                        break;
-                    case 'H':
-                        result += count === 2 ? pad(parts.hour, 2) : String(parts.hour);
-                        break;
-                    case 'm':
-                        result += count === 2 ? pad(parts.minute, 2) : String(parts.minute);
-                        break;
-                    case 's':
-                        result += count === 2 ? pad(parts.second, 2) : String(parts.second);
-                        break;
-                    case 'S': {
-                        const ms = ts - Math.floor(ts / 1000) * 1000;
-                        result += pad(ms, 3).substring(0, count);
-                        break;
-                    }
-                    case 'Z': {
-                        const sign = offsetMin >= 0 ? '+' : '-';
-                        const absMin = Math.abs(offsetMin);
-                        result += `${sign}${pad(Math.floor(absMin / 60), 2)}${pad(absMin % 60, 2)}`;
-                        break;
-                    }
-                    default:
-                        // Unknown letter token — leave as-is
-                        result += ch.repeat(count);
-                }
-                continue;
-            }
-
-            // Literal char
-            result += ch;
-            i++;
-        }
-        return result;
+        const pattern = format === undefined ? DEFAULT_TIME_FORMAT : text(format);
+        if (timezone !== undefined) return formatTime(ts, pattern, text(timezone));
+        const symbolTimezone = this.context.pine?.syminfo?.timezone;
+        return formatTime(ts, pattern, symbolTimezone && resolveTimeZone(symbolTimezone) ? symbolTimezone : 'UTC');
     }
 
     /**

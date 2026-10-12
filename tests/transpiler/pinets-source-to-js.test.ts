@@ -890,7 +890,7 @@ let src_open = input.any({ title: 'Open Source', defval: open });
   $.let.glb1__cc = $.init($.let.glb1__cc, close);
   let __lg0 = 0;
   for (let i = 0; i < $.get($.let.glb1__cc, 1); i++) {
-    if (++__lg0 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg0)");
+    if (++__lg0 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg0)");
     $.let.for2_bb = $.init($.let.for2_bb, 1);
     $.let.for2_cc = $.init($.let.for2_cc, close);
     $.set($.let.for2_cc, $.get(close, 1));
@@ -908,61 +908,61 @@ let src_open = input.any({ title: 'Open Source', defval: open });
   ;
   let __lg1 = 0;
   for (let i = 0; i < 10; i++) {
-    if (++__lg1 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg1)");
+    if (++__lg1 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg1)");
     $.set($.let.glb1_aa, i);
   }
   ;
   let __lg2 = 0;
   for (let i = 0; i < $.get($.let.glb1_aa, 0); i++) {
-    if (++__lg2 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg2)");
+    if (++__lg2 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg2)");
     $.set($.let.glb1__cc, $.get($.let.glb1__cc, i));
   }
   ;
   let __lg3 = 0;
   for (let i = 0; i < $.get($.let.glb1__cc, 0); i++) {
-    if (++__lg3 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg3)");
+    if (++__lg3 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg3)");
     $.set($.let.glb1_aa, i);
   }
   ;
   let __lg4 = 0;
   for (let i = 0; i < $.get($.let.glb1__cc, 1); i++) {
-    if (++__lg4 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg4)");
+    if (++__lg4 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg4)");
     $.set($.let.glb1_aa, i);
   }
   ;
   let __lg5 = 0;
   for (let i = 0; i < $.get($.let.glb1__cc, $.get($.let.glb1_aa, 0)); i++) {
-    if (++__lg5 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg5)");
+    if (++__lg5 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg5)");
     $.set($.let.glb1_aa, i);
   }
   ;
   let __lg6 = 0;
   for (let i = 0; i < $.get($.let.glb1__cc, $.let.glb1_aa[99]); i++) {
-    if (++__lg6 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg6)");
+    if (++__lg6 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg6)");
     $.set($.let.glb1_aa, i);
   }
   ;
   let __lg7 = 0;
   for (let i = 0; i < $.get(close, 0); i++) {
-    if (++__lg7 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg7)");
+    if (++__lg7 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg7)");
     $.set($.let.glb1_aa, i);
   }
   ;
   let __lg8 = 0;
   for (let i = 0; i < $.get(close, 1); i++) {
-    if (++__lg8 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg8)");
+    if (++__lg8 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg8)");
     $.set($.let.glb1_aa, i);
   }
   ;
   let __lg9 = 0;
   for (let i = 0; i < $.get(close, $.get($.let.glb1_aa, 0)); i++) {
-    if (++__lg9 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg9)");
+    if (++__lg9 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg9)");
     $.set($.let.glb1_aa, i);
   }
   ;
   let __lg10 = 0;
   for (let i = 0; i < $.get(close, $.let.glb1_aa[99]); i++) {
-    if (++__lg10 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg10)");
+    if (++__lg10 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg10)");
     $.set($.let.glb1_aa, i);
   }
 }`;
@@ -1060,7 +1060,7 @@ let src_open = input.any({ title: 'Open Source', defval: open });
     $$.let.fn2_ret_val = $.init($$.let.fn2_ret_val, 0);
     let __lg0 = 0;
     for (let i = 1; i <= $.get(avg_len, 0); i++) {
-      if (++__lg0 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg0)");
+      if (++__lg0 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg0)");
       $.set($$.let.fn2_ret_val, $.get($$.let.fn2_ret_val, 0) + $.get(avg_src, i));
     }
     ;
@@ -1258,7 +1258,7 @@ let src_open = input.any({ title: 'Open Source', defval: open });
     $$.let.fn1_ret_val = $.init($$.let.fn1_ret_val, 0);
     let __lg0 = 0;
     for (let i = 1; i <= $.get(avg_len, 0); i++) {
-      if (++__lg0 > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lg0)");
+      if (++__lg0 > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lg0)");
       $.set($$.let.fn1_ret_val, $.get($$.let.fn1_ret_val, 0) + $.get(avg_src, i));
     }
     ;

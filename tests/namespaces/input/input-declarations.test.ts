@@ -410,7 +410,7 @@ describe('input declarations: compile errors', () => {
             'k = input.time(timestamp("2024-01-01 00:00 +0000"))',
             'k = input.int(true ? 3 : 4)',
             'L = 7',
-            'k = input.int(L * 2, "T" + "x", minval = 1 + 1)',
+            'L = 7\nk = input.int(L * 2, "T" + "x", minval = 1 + 1)',
             'var k = input.int(14)',
         ]) {
             expect(() => transpile(pine(line, 'plot(close)'))).not.toThrow();

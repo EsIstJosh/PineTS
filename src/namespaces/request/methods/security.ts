@@ -7,6 +7,7 @@ import { formatTimeframe, parseTimeframe, timeframeSeconds } from '../../../time
 import { findSecContextIdx } from '../utils/findSecContextIdx';
 import { findLTFContextIdx } from '../utils/findLTFContextIdx';
 import { parseArgsForPineParams } from '../../utils';
+import { trackRequestContext, MAX_CALC_BARS } from '../../limits';
 
 // Pine signature (v5/v6):
 //   request.security(symbol, timeframe, expression, gaps, lookahead, ignore_invalid_symbol, currency, calc_bars_count)
@@ -157,12 +158,13 @@ export function security(context: any) {
         // Convert to boolean for correct behavior in findLTFContextIdx/findSecContextIdx
         const _gaps = _gapsRaw === true || _gapsRaw === 'gaps_on';
         const _lookahead = _lookaheadRaw === true || _lookaheadRaw === 'lookahead_on';
+        const _ignore_invalid_symbol = resolveSlotValue(parsed.ignore_invalid_symbol) === true;
         // calc_bars_count gives the secondary the requested historical depth at the
         // security TF — important when chart TF is much smaller than security TF
         // (e.g. 15m chart, daily security where 500 chart bars cover only ~5 daily bars).
         const _calc_bars_count = (() => {
             const v = resolveSlotValue(parsed.calc_bars_count);
-            return typeof v === 'number' && v > 0 ? v : undefined;
+            return typeof v === 'number' && v > 0 ? Math.min(v, MAX_CALC_BARS) : undefined;
         })();
 
         // CRITICAL: Prevent infinite recursion in secondary contexts
@@ -224,6 +226,9 @@ export function security(context: any) {
 
         if (context.cache[cacheKey]) {
             const cached = context.cache[cacheKey];
+            // The requested series failed to load and the call ignores invalid
+            // symbols: na on every bar (warned once, when it failed).
+            if (cached.failed) return NaN;
 
             // Refresh secondary context when main context's data has changed (streaming mode)
             if (context.dataVersion > cached.dataVersion) {
@@ -311,6 +316,11 @@ export function security(context: any) {
             : 0;
         const secEDate = lastBarCloseTime || context.eDate || Date.now();
 
+        // Count this new secondary context against the per-run request budget
+        // (one provider fetch on the host's API key); stops an uncapped fan-out,
+        // e.g. a per-bar-varying symbol, from draining the host's provider quota.
+        trackRequestContext(context, 'request.security');
+
         // Pass calc_bars_count as `periods` so the secondary fetches that many bars
         // ending at secEDate — gives the script the historical depth it asked for.
         const pineTS = new PineTS(context.source, _symbol, _timeframe, _calc_bars_count, adjustedSDate, secEDate);
@@ -329,9 +339,20 @@ export function security(context: any) {
         const exprNameStr = typeof _expression_name === 'string' ? _expression_name : '';
         const sliceKey = exprNameStr.match(/p\d+$/)?.[0] ?? exprNameStr;
         const slice = (context as any)._ltfTruncatedBodies?.[sliceKey];
-        const secContext = slice
-            ? await pineTS.runPretranspiled(slice)
-            : await pineTS.run(context.pineTSCode);
+        let secContext: any;
+        try {
+            secContext = slice
+                ? await pineTS.runPretranspiled(slice)
+                : await pineTS.run(context.pineTSCode);
+        } catch (error) {
+            // The data source couldn't provide the requested series. As on
+            // TradingView the script stops with the error, unless the call
+            // passes ignore_invalid_symbol = true: then the series is na.
+            if (!_ignore_invalid_symbol) throw error;
+            context.cache[cacheKey] = { failed: true };
+            context.warn(`request.security(${_symbol}, ${_timeframe}) returns na: ${(error as any)?.message ?? error}`, 'request.security');
+            return NaN;
+        }
 
         context.cache[cacheKey] = { pineTS, context: secContext, dataVersion: context.dataVersion };
 

@@ -22,8 +22,9 @@ import {
 /**
  * Creates the AST nodes for a loop guard:
  * 1. A counter declaration: `let __lgN = 0;` (to be hoisted before the loop)
- * 2. A guard check: `if (++__lgN > __maxLoops) throw new Error("Loop exceeded maximum iterations (__lgN)");`
- *    (to be prepended to the loop body)
+ * 2. A guard check: `if (++__lgN > __maxLoops) $.loopError("Loop exceeded maximum iterations (__lgN)");`
+ *    (to be prepended to the loop body). `$.loopError` throws a PineRuntimeError
+ *    so a host can tell a loop-limit kill from a general engine error.
  */
 export function createLoopGuardNodes(guardName: string): { counterDecl: any; guardCheck: any } {
     // let __lgN = 0;
@@ -55,10 +56,17 @@ export function createLoopGuardNodes(guardName: string): { counterDecl: any; gua
             right: { type: 'Identifier', name: '__maxLoops' },
         },
         consequent: {
-            type: 'ThrowStatement',
-            argument: {
-                type: 'NewExpression',
-                callee: { type: 'Identifier', name: 'Error' },
+            // `$.loopError(...)` throws a PineRuntimeError (never returns), so the
+            // loop-limit kill is distinguishable from a general engine error.
+            type: 'ExpressionStatement',
+            expression: {
+                type: 'CallExpression',
+                callee: {
+                    type: 'MemberExpression',
+                    object: { type: 'Identifier', name: '$' },
+                    property: { type: 'Identifier', name: 'loopError' },
+                    computed: false,
+                },
                 arguments: [{
                     type: 'Literal',
                     value: `Loop exceeded maximum iterations (${guardName})`,
@@ -546,7 +554,12 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                             if (node.cases) {
                                 node.cases.forEach((caseNode: any) => {
                                     caseNode.parent = node;
-                                    c(caseNode, { parent: node });
+                                    // Preserve `insideIIFE`: a `switch` used as an expression is
+                                    // emitted as an IIFE, so `:=` assignments in its arms are inside
+                                    // the IIFE and must still be rewritten to `$.set(...)`. Dropping
+                                    // the flag here left them as bare `name = …`, which leaks a host
+                                    // global instead of updating the Pine variable.
+                                    c(caseNode, { parent: node, insideIIFE: state.insideIIFE });
                                 });
                             }
                         },
@@ -554,7 +567,7 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                             // Traverse test (the case value)
                             if (node.test) {
                                 node.test.parent = node;
-                                c(node.test, { parent: node });
+                                c(node.test, { parent: node, insideIIFE: state.insideIIFE });
                             }
                             // Traverse all consequent statements with hoisting management
                             if (node.consequent) {
@@ -562,7 +575,7 @@ export function transformVariableDeclaration(varNode: any, scopeManager: ScopeMa
                                 node.consequent.forEach((stmt: any) => {
                                     scopeManager.enterHoistingScope();
                                     stmt.parent = node;
-                                    c(stmt, { parent: node });
+                                    c(stmt, { parent: node, insideIIFE: state.insideIIFE });
                                     const hoistedStmts = scopeManager.exitHoistingScope();
                                     newConsequent.push(...hoistedStmts);
                                     newConsequent.push(stmt);
@@ -966,10 +979,13 @@ export function transformForStatement(node: any, scopeManager: ScopeManager, c: 
     c(node.body, scopeManager);
     scopeManager.popScope();
 
-    // Prepend guard check as the first statement in the loop body
-    if (node.body.type === 'BlockStatement') {
-        node.body.body.unshift(forGuard.guardCheck);
+    // Prepend guard check as the first statement in the loop body. A braceless
+    // single-statement body (reachable only via PineTS-syntax input; native Pine
+    // always emits block bodies) is wrapped first so it is guarded too.
+    if (node.body.type !== 'BlockStatement') {
+        node.body = { type: 'BlockStatement', body: [node.body] };
     }
+    node.body.body.unshift(forGuard.guardCheck);
 
     // Clean up loop variable so it doesn't leak to outer scope
     // (prevents shadowing issues when the same name is reused later)
@@ -1002,10 +1018,12 @@ export function transformWhileStatement(node: any, scopeManager: ScopeManager, c
     c(node.body, scopeManager);
     scopeManager.popScope();
 
-    // Prepend guard check as the first statement in the loop body
-    if (node.body.type === 'BlockStatement') {
-        node.body.body.unshift(whileGuard.guardCheck);
+    // Prepend guard check as the first statement in the loop body. A braceless
+    // body (PineTS-syntax only) is wrapped first so it is guarded too.
+    if (node.body.type !== 'BlockStatement') {
+        node.body = { type: 'BlockStatement', body: [node.body] };
     }
+    node.body.body.unshift(whileGuard.guardCheck);
 }
 
 export function transformExpression(node: any, scopeManager: ScopeManager): void {

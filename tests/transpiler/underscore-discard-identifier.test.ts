@@ -177,9 +177,9 @@ plot(total, "t")
 
     // TradingView: "A value assigned to such a variable cannot be accessed."
     // Reading `_` is a compile error on TV (`Undeclared identifier "_"`).
-    // PineTS surfaces every undeclared identifier as a ReferenceError at run
-    // time; `_` must behave the same way and never silently resolve to one of
-    // the discarded values.
+    // The closed-world verifier rejects every undeclared identifier at transpile
+    // time, matching TradingView; `_` must behave the same way and never
+    // silently resolve to one of the discarded values.
     describe('`_` is write-only: reading it fails like any undeclared identifier', () => {
         it('plot(_) after a tuple declaration', async () => {
             await expect(
@@ -189,7 +189,7 @@ indicator("t")
 [_, s1, _] = ta.macd(close, 12, 26, 9)
 plot(_, "u")
 `)
-            ).rejects.toThrow(/_ is not defined/);
+            ).rejects.toThrow(/Undeclared identifier "_"/);
         });
 
         it('`_` used in an expression after a plain declaration', async () => {
@@ -201,7 +201,7 @@ _ = ta.sma(close, 10)
 x = _ + 1
 plot(x, "x")
 `)
-            ).rejects.toThrow(/_ is not defined/);
+            ).rejects.toThrow(/Undeclared identifier "_"/);
         });
 
         it('`_` read inside a user function body', async () => {
@@ -214,7 +214,7 @@ f() =>
     a + _
 plot(f(), "r")
 `)
-            ).rejects.toThrow(/_ is not defined/);
+            ).rejects.toThrow(/Undeclared identifier "_"/);
         });
     });
 

@@ -7,6 +7,7 @@ import { plainTickerId } from '../../../tickerModifier';
 import { PineArrayObject, PineArrayType } from '../../array/PineArrayObject';
 import { PineTypeObject } from '../../PineTypeObject';
 import { parseArgsForPineParams } from '../../utils';
+import { trackRequestContext, MAX_CALC_BARS } from '../../limits';
 
 // Pine signature (v5/v6):
 //   request.security_lower_tf(symbol, timeframe, expression, ignore_invalid_symbol, currency, ignore_invalid_timeframe, calc_bars_count)
@@ -305,7 +306,7 @@ export function security_lower_tf(context: any) {
         const _ignore_invalid_timeframe = resolveSlotValue(parsed.ignore_invalid_timeframe);
         const _calc_bars_count = (() => {
             const v = resolveSlotValue(parsed.calc_bars_count);
-            return typeof v === 'number' && v > 0 ? v : undefined;
+            return typeof v === 'number' && v > 0 ? Math.min(v, MAX_CALC_BARS) : undefined;
         })();
 
         // CRITICAL: Prevent infinite recursion in secondary contexts
@@ -363,6 +364,10 @@ export function security_lower_tf(context: any) {
         const builtinExpr = detectPureBuiltinExpression(originalSource, context);
 
         if (!context.cache[cacheKey]) {
+            // Count this new secondary context against the per-run request budget
+            // (fast or slow path, each is a provider fetch on the host's key) so an
+            // uncapped fan-out cannot drain the host operator's provider quota.
+            trackRequestContext(context, 'request.security_lower_tf');
             if (builtinExpr !== null) {
                 // ── Fast path ────────────────────────────────────────
                 const fastSecContext = await buildFastBuiltinSecContext(
