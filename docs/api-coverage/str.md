@@ -22,7 +22,7 @@ parent: API Coverage
 | Function            | Status | Description                  |
 | ------------------- | ------ | ---------------------------- |
 | `str.format()`      | ✅     | Format string with arguments |
-| `str.format_time()` | ❌     | Format time value            |
+| `str.format_time()` | ✅     | Format time value            |
 
 ### Transformation
 
